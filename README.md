@@ -159,3 +159,16 @@ Please star and cite this repo if you find project useful!
 }
 ```
 
+
+## tracker.py에서 다음 코드를 수정해야합니다.  `sam_checkpoint='./saves/sam_vit_l.pth', model_type='vit_l'):`에서 적절한 체크포인트와 모델타입으로!
+```python
+def create_mask_from_img(self, image, yolov8_bboxes, sam_checkpoint='./saves/sam_vit_l.pth', model_type='vit_l'):
+sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
+sam.to(device=self.device)
+predictor = SamPredictor(sam)
+predictor.set_image(image)
+input_boxes = torch.tensor(yolov8_bboxes, device=predictor.device)
+
+        transformed_boxes = predictor.transform.apply_boxes_torch(input_boxes, image.shape[:2])
+        masks = []
+```
