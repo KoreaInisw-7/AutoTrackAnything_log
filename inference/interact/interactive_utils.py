@@ -19,9 +19,19 @@ def torch_prob_to_numpy_mask(prob):
     mask = mask.cpu().numpy().astype(np.uint8)
     return mask
 
-def index_numpy_to_one_hot_torch(mask, num_classes):
+#def index_numpy_to_one_hot_torch(mask, num_classes=None):
+#    mask = torch.from_numpy(mask).long()
+#    if num_classes is None:
+#        num_classes = torch.max(mask).item() + 1
+#    return F.one_hot(mask, num_classes=num_classes).permute(2, 0, 1).float()
+
+def index_numpy_to_one_hot_torch(mask, num_classes=None):
     mask = torch.from_numpy(mask).long()
+    if num_classes is None:
+        num_classes = torch.max(mask).item() + 1
+    print(f"num_classes로 원핫 인코딩: {num_classes}")
     return F.one_hot(mask, num_classes=num_classes).permute(2, 0, 1).float()
+
 
 """
 Some constants fro visualization
@@ -131,7 +141,7 @@ def overlay_davis_torch(image, mask, alpha=0.5, fade=False):
 def overlay_popup_torch(image, mask, target_object):
     # Keep foreground colored. Convert background to grayscale.
     image = image.permute(1, 2, 0)
-    
+
     if len(target_object) == 0:
         obj_mask = torch.zeros_like(mask[0]).unsqueeze(2)
     else:

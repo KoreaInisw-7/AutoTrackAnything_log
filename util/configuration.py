@@ -93,8 +93,12 @@ class Configuration():
         parser.add_argument('--exp_id', help='Experiment UNIQUE id, use NULL to disable logging to tensorboard', default='NULL')
         parser.add_argument('--debug', help='Debug mode which logs information more often', action='store_true')
 
-        # # Multiprocessing parameters, not set by users
-        # parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
+        # Multiprocessing parameters, not set by users
+        parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
+
+        # XMEM_CONFIG 추가
+        parser.add_argument('--xmem_model_path', help='Path to XMEM model', default='path_to_model.pth')
+        parser.add_argument('--some_other_config', help='Some other config for XMEM', default='value')
 
         if unknown_arg_ok:
             args, _ = parser.parse_known_args()
@@ -124,6 +128,13 @@ class Configuration():
         }
 
         return parameters
+
+    def get_xmem_config(self):
+        xmem_config = {
+            'model_path': self.args['xmem_model_path'],
+            'some_other_config': self.args['some_other_config']
+        }
+        return xmem_config
 
     def __getitem__(self, key):
         return self.args[key]

@@ -10,7 +10,7 @@ from mobile_sam import (SamAutomaticMaskGenerator, SamPredictor,
 from PIL import Image
 from skimage.measure import label, regionprops
 
-from config import (DEVICE, IOU_THRESHOLD, KPTS_CONF, MAX_OBJECT_CNT,
+from config import (DEVICE, IOU_THRESHOLD, MAX_OBJECT_CNT,
                     PERSON_CONF, XMEM_CONFIG)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = DEVICE
@@ -18,14 +18,15 @@ os.environ['CUDA_VISIBLE_DEVICES'] = DEVICE
 torch.cuda.empty_cache()
 
 
-def generate_colors_dict(num_classes):
+def generate_colors_dict(num_classes, max_attempts=1000, min_distance=50):
     if num_classes > 256*256*256:
         raise ValueError('Number of classes is too large.')
 
     color_dict = {}
 
     for class_id in range(num_classes):
-        while True:
+        attempts = 0
+        while attempts < max_attempts:
             r = random.randint(0, 255)
             g = random.randint(0, 255)
             b = random.randint(0, 255)
@@ -36,13 +37,19 @@ def generate_colors_dict(num_classes):
                             (g - existing_color[1]) ** 2 +
                             (b - existing_color[2]) ** 2) ** 0.5
 
-                if distance < 100:
+                if distance < min_distance:
                     is_maximally_different = False
                     break
 
             if is_maximally_different:
                 color_dict[class_id] = (r, g, b)
                 break
+
+            attempts += 1
+
+        if attempts >= max_attempts:
+            raise RuntimeError(f"Failed to generate a unique color for class {class_id} after {max_attempts} attempts.")
+
     return color_dict
 
 
@@ -157,7 +164,7 @@ def calculate_iou(box1, box2):
     y2_intersection = min(y2_1, y2_2)
 
     intersection_area = max(0, x2_intersection - x1_intersection + 1) * \
-        max(0, y2_intersection - y1_intersection + 1)
+                        max(0, y2_intersection - y1_intersection + 1)
 
     area_box1 = (x2_1 - x1_1 + 1) * (y2_1 - y1_1 + 1)
     area_box2 = (x2_2 - x1_2 + 1) * (y2_2 - y1_2 + 1)
@@ -228,7 +235,7 @@ def overlay_mask_on_image(image, mask, class_color_mapping, alpha=0.5):
             continue
         class_mask = (mask_np == class_label).astype(np.uint8)
         result_image[class_mask == 1] = (
-            1 - alpha) * result_image[class_mask == 1] + alpha * np.array(color)
+                                                1 - alpha) * result_image[class_mask == 1] + alpha * np.array(color)
 
     return result_image
 
